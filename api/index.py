@@ -2,8 +2,12 @@ import os
 import yt_dlp
 import tempfile
 import requests
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, jsonify, request
 from werkzeug.utils import secure_filename
+import aiohttp
+import asyncio
 
 app = Flask(__name__)
 
@@ -12,159 +16,128 @@ TEMP_DIR = tempfile.mkdtemp()
 
 # Default cookies file URL if no cookies file or cookies URL is provided
 DEFAULT_COOKIES_URL = "https://raw.githubusercontent.com/reddevil212/jks/refs/heads/main/cookies.txt"
+COOKIES_CACHE_PATH = os.path.join(TEMP_DIR, 'cookies_cache.txt')
+COOKIE_EXPIRATION_TIME = 3600  # Cache cookies for 1 hour
 
 # Helper function to validate YouTube URL
 def is_valid_youtube_url(url):
-    print(f"Validating YouTube URL: {url}")
     return 'youtube.com' in url or 'youtu.be' in url
 
-# Helper function to download the cookies file from a URL
-def download_cookies_from_url(url, download_path):
-    print(f"Attempting to download cookies from URL: {url}")
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an error for bad responses
-        with open(download_path, 'wb') as f:
-            f.write(response.content)
-        
-        print(f"Successfully downloaded cookies to: {download_path}")
-        return download_path
-    except requests.exceptions.RequestException as e:
-        print(f"Error downloading cookies file from URL: {str(e)}")
-        return {"error": f"Failed to download cookies from URL: {str(e)}"}
+# Cache check for cookies
+def get_cached_cookies():
+    if os.path.exists(COOKIES_CACHE_PATH):
+        file_age = time.time() - os.path.getmtime(COOKIES_CACHE_PATH)
+        if file_age < COOKIE_EXPIRATION_TIME:
+            return COOKIES_CACHE_PATH
+    return None
 
-# Function to get the best audio URL from a YouTube video
+# Download cookies from URL
+async def download_cookies_from_url(url, download_path):
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url) as response:
+                response.raise_for_status()
+                content = await response.read()
+                with open(download_path, 'wb') as f:
+                    f.write(content)
+            return download_path
+        except Exception as e:
+            print(f"Error downloading cookies: {str(e)}")
+            return None
+
+# Get audio URL from YouTube video
 def get_audio_url_from_json(video_url, cookies_file_path):
-    print(f"Fetching audio URL for video: {video_url}")
-    
     ydl_opts = {
-        'format': 'bestaudio',  # Focus on the best available audio format
-        'noplaylist': True,     # Disable playlist downloads
-        'quiet': False,         # Set verbosity to True for debugging
-        'cookiefile': cookies_file_path,  # Include cookies if provided
-        'forcejson': True,      # Request JSON format response
+        'format': 'bestaudio',
+        'noplaylist': True,
+        'quiet': True,
+        'cookiefile': cookies_file_path,
+        'forcejson': True,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
-            # Extract video info (without downloading)
             info_dict = ydl.extract_info(video_url, download=False)
-            
-            # Iterate over formats to find the first audio-only stream
             for format in info_dict['formats']:
-                # Find the first format with audio and no video codec
                 if format['acodec'] == 'opus' and format['vcodec'] == 'none' and format.get('url'):
                     return format['url']
-
-            return None  # No valid audio stream found
-
+            return None
         except Exception as e:
-            print(f"Error during extraction: {str(e)}")  # Debugging output
+            print(f"Error extracting audio URL: {str(e)}")
             return None
 
-# Route to fetch the audio download URL for multiple URLs
+# Optimized function to process each video URL asynchronously
+def get_audio_for_video(video_url, cookies_file_path):
+    try:
+        audio_url = get_audio_url_from_json(video_url, cookies_file_path)
+        if audio_url:
+            return {'audio_url': audio_url}
+        else:
+            return {'audio_url': 'Audio stream not found'}
+    except Exception as e:
+        return {'audio_url': f"Error: {str(e)}"}
+
+# Main endpoint for fetching audio
 @app.route('/get_audio', methods=['POST'])
 def get_audio():
-    print("Received request to fetch audio.")
-
-    # Check if the content type is JSON or multipart/form-data
+    # Check if JSON data is provided
     if request.is_json:
-        # Parse JSON data
         data = request.get_json()
         video_urls = data.get('urls', [])
         cookies_url = data.get('cookies_url', None)
-        print(f"Received video URLs from JSON: {video_urls}")
     else:
-        # Parse form data (multipart/form-data)
         video_urls = request.form.getlist('urls[]')
         cookies_url = request.form.get('cookies_url', None)
-        print(f"Received video URLs from form: {video_urls}")
 
-    # Step 1: Validate that at least one URL is provided
+    # Validate URLs
     if not video_urls:
-        print("Error: No YouTube URLs provided.")
         return jsonify({'error': 'No YouTube URLs provided'}), 400
 
-    # Step 2: Handling cookies - either from file upload, URL, or default URL
-    cookies_file_path = None
-    cookies_file = request.files.get('cookies.txt')
-
-    if cookies_file:
-        cookies_file_path = os.path.join(TEMP_DIR, secure_filename(cookies_file.filename))
-        cookies_file.save(cookies_file_path)
-        print(f"Successfully uploaded cookie file: {cookies_file.filename}")
-    elif cookies_url:
-        cookies_file_path = os.path.join(TEMP_DIR, 'cookies.txt')
-        result = download_cookies_from_url(cookies_url, cookies_file_path)
-        if isinstance(result, dict) and 'error' in result:
-            return jsonify(result), 400
-    else:
-        # If no cookies file or cookies URL is provided, use the default URL
-        cookies_file_path = os.path.join(TEMP_DIR, 'cookies.txt')
-        print(f"Using default cookies file URL: {DEFAULT_COOKIES_URL}")
-        result = download_cookies_from_url(DEFAULT_COOKIES_URL, cookies_file_path)
-        if isinstance(result, dict) and 'error' in result:
-            return jsonify(result), 400
-
-    # Log the content of the cookies file if it exists
-    if cookies_file_path:
-        try:
-            with open(cookies_file_path, 'r') as f:
-                cookies_content = f.read()
-                print(f"Content of cookies file ({cookies_file_path}):\n{cookies_content}")
-        except Exception as e:
-            print(f"Error reading cookies file: {str(e)}")
-
-    # Step 3: Validate the YouTube URLs
-    invalid_urls = []
-    valid_urls = []
-    
-    for url in video_urls:
-        if not is_valid_youtube_url(url):
-            invalid_urls.append(url)
+    # Handling cookies - check for cached or default cookies
+    cookies_file_path = get_cached_cookies()
+    if not cookies_file_path:
+        if cookies_url:
+            cookies_file_path = os.path.join(TEMP_DIR, 'cookies.txt')
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            result = loop.run_until_complete(download_cookies_from_url(cookies_url, cookies_file_path))
+            if result is None:
+                return jsonify({'error': 'Failed to download cookies'}), 400
         else:
-            valid_urls.append(url)
+            cookies_file_path = os.path.join(TEMP_DIR, 'cookies.txt')
+            result = asyncio.run(download_cookies_from_url(DEFAULT_COOKIES_URL, cookies_file_path))
+            if result is None:
+                return jsonify({'error': 'Failed to download default cookies'}), 400
+
+        # Cache the downloaded cookies
+        if cookies_file_path:
+            with open(COOKIES_CACHE_PATH, 'wb') as f:
+                with open(cookies_file_path, 'rb') as original:
+                    f.write(original.read())
+
+    # Validate YouTube URLs
+    invalid_urls = [url for url in video_urls if not is_valid_youtube_url(url)]
+    valid_urls = [url for url in video_urls if is_valid_youtube_url(url)]
 
     if invalid_urls:
-        print(f"Error: Invalid YouTube URLs: {invalid_urls}")
         return jsonify({'error': 'Invalid YouTube URLs', 'invalid_urls': invalid_urls}), 400
 
-    # Step 4: Fetch the best audio URL for each valid URL
-    urls_data = []
-    for idx, video_url in enumerate(valid_urls, 1):
-        try:
-            audio_url = get_audio_url_from_json(video_url, cookies_file_path)
-            if audio_url:
-                urls_data.append({
-                    'value': idx,
-                    'audio_url': audio_url
-                })
-            else:
-                urls_data.append({
-                    'value': idx,
-                    'audio_url': 'Audio stream not found'
-                })
-        except Exception as e:
-            print(f"Error during audio URL extraction for {video_url}: {str(e)}")
-            urls_data.append({
-                'value': idx,
-                'audio_url': f"Error: {str(e)}"
-            })
+    # Process valid URLs in parallel
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_url = {executor.submit(get_audio_for_video, url, cookies_file_path): url for url in valid_urls}
+        urls_data = []
+        for future in as_completed(future_to_url):
+            result = future.result()
+            urls_data.append(result)
 
     # Return the results
     return jsonify({'urls': urls_data})
 
-# Health check endpoint to ensure the server is running
+# Health check endpoint
 @app.route('/', methods=['GET'])
 def health_check():
-    try:
-        print("Health check request received.")
-        return jsonify({"status": "success", "message": "The API is up and running!"}), 200
-    except Exception as e:
-        print(f"Health check failed: {str(e)}")
-        return jsonify({"status": "fail", "message": f"Health check failed: {str(e)}"}), 503
+    return jsonify({"status": "success", "message": "The API is up and running!"}), 200
 
 # Start the Flask server
 if __name__ == '__main__':
-    print("Starting Flask server...")
     app.run(debug=True, host='0.0.0.0', port=5000)
