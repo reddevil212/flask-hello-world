@@ -1,8 +1,6 @@
 Flask==3.0.3
-yt_dlp==2024.12.13
+yt-dlp==2024.12.13
 ytmusicapi==1.8.2
 Flask-Cors==5.0.0
-Werkzeug
-futures==3.4.0
-aiohttp==3.11.11
-asyncio==3.4.3
+Werkzeug==2.2.3
+aiohttp==3.8.5
