@@ -7,7 +7,7 @@ from flask import Flask, jsonify, request
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-
+ytmusic = YTMusic()
 # Configure a temporary directory for storing uploaded files
 TEMP_DIR = tempfile.mkdtemp()
 
