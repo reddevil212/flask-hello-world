@@ -104,6 +104,102 @@ def get_audio():
 
     return jsonify({'urls': urls_data})
 
+
+# Endpoint to search for songs, artists, and albums
+@app.route('/search', methods=['GET'])
+def search():
+    start_time = time.time()  # Start measuring time
+    query = request.args.get('query')
+    results = ytmusic.search(query)
+    end_time = time.time()  # End measuring time
+    print(f"Search Request Time: {end_time - start_time:.4f} seconds")  # Print time taken
+    return jsonify(results)
+
+@app.route('/search_suggestions', methods=['GET'])
+def search_suggestions():
+    start_time = time.time()  # Start measuring time
+    query = request.args.get('query')
+    detailed_runs = request.args.get('detailed_runs', default=False, type=lambda x: (x.lower() == 'true'))
+
+    if not query:
+        return jsonify({'error': 'Query parameter is required'}), 400
+
+    try:
+        suggestions = ytmusic.get_search_suggestions(query, detailed_runs)
+        end_time = time.time()  # End measuring time
+        print(f"Search Suggestions Request Time: {end_time - start_time:.4f} seconds")  # Print time taken
+        return jsonify(suggestions)
+    except Exception as e:
+        end_time = time.time()  # End measuring time
+        print(f"Search Suggestions Error Time: {end_time - start_time:.4f} seconds")  # Print time taken on error
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get_artist', methods=['GET'])
+def get_artist():
+    start_time = time.time()  # Start measuring time
+    artist_id = request.args.get('artistId')
+    if not artist_id:
+        return jsonify({'error': 'Artist ID parameter is required'}), 400
+
+    try:
+        artist_info = ytmusic.get_artist(artist_id)
+        end_time = time.time()  # End measuring time
+        print(f"Get Artist Request Time: {end_time - start_time:.4f} seconds")  # Print time taken
+        return jsonify(artist_info)
+    except Exception as e:
+        end_time = time.time()  # End measuring time
+        print(f"Get Artist Error Time: {end_time - start_time:.4f} seconds")  # Print time taken on error
+        return jsonify({'error': str(e)}), 500
+
+# Endpoint to retrieve artist albums
+@app.route('/artists/<string:artist_id>/albums', methods=['GET'])
+def get_artist_albums(artist_id):
+    start_time = time.time()  # Start measuring time
+    results = ytmusic.get_artist_albums(artist_id)
+    end_time = time.time()  # End measuring time
+    print(f"Get Artist Albums Time: {end_time - start_time:.4f} seconds")  # Print time taken
+    return jsonify(results)
+
+# Endpoint to retrieve album data
+@app.route('/albums/<string:album_id>', methods=['GET'])
+def get_album(album_id):
+    start_time = time.time()  # Start measuring time
+    results = ytmusic.get_album(album_id)
+    end_time = time.time()  # End measuring time
+    print(f"Get Album Request Time: {end_time - start_time:.4f} seconds")  # Print time taken
+    return jsonify(results)
+
+# Endpoint to retrieve album browse ID
+@app.route('/albums/<string:album_id>/browse_id', methods=['GET'])
+def get_album_browse_id(album_id):
+    start_time = time.time()  # Start measuring time
+    results = ytmusic.get_album_browse_id(album_id)
+    end_time = time.time()  # End measuring time
+    print(f"Get Album Browse ID Request Time: {end_time - start_time:.4f} seconds")  # Print time taken
+    return jsonify(results)
+
+# Endpoint to retrieve song data
+@app.route('/songs/<string:song_id>', methods=['GET'])
+def get_song(song_id):
+    start_time = time.time()  # Start measuring time
+    results = ytmusic.get_song(song_id)
+    end_time = time.time()  # End measuring time
+    print(f"Get Song Request Time: {end_time - start_time:.4f} seconds")  # Print time taken
+    return jsonify(results)
+
+# Endpoint to retrieve related songs
+@app.route('/songs/<string:song_id>/related', methods=['GET'])
+def get_song_related(song_id):
+    start_time = time.time()  # Start measuring time
+    results = ytmusic.get_song_related(song_id)
+    end_time = time.time()  # End measuring time
+    print(f"Get Song Related Request Time: {end_time - start_time:.4f} seconds")  # Print time taken
+    return jsonify(results)
+
+
+
+
+
 # Health check endpoint to ensure the server is running
 @app.route('/', methods=['GET'])
 def health_check():
