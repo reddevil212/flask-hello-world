@@ -22,7 +22,7 @@
 - Python
 - Flask
 - yt-dlp (for audio extraction)
-- yt-music-api (for YouTube Music data)
+- ytmusicapi (for YouTube Music data)
 - Requests
 - Werkzeug (for file handling)
 ---
