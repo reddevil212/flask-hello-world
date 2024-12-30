@@ -1,28 +1,39 @@
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fexamples%2Ftree%2Fmain%2Fpython%2Fflask3&demo-title=Flask%203%20%2B%20Vercel&demo-description=Use%20Flask%203%20on%20Vercel%20with%20Serverless%20Functions%20using%20the%20Python%20Runtime.&demo-url=https%3A%2F%2Fflask3-python-template.vercel.app%2F&demo-image=https://assets.vercel.com/image/upload/v1669994156/random/flask.png)
+# YouTube Music API
 
-# Flask + Vercel
+This is a Flask-based API that integrates with `ytmusicapi` and `yt-dlp` to provide music-related functionalities such as searching for songs, retrieving artist and album information, and fetching audio URLs from YouTube videos. It is designed to be used for applications that need to interact with YouTube Music and YouTube videos to extract media data.
 
-This example shows how to use Flask 3 on Vercel with Serverless Functions using the [Python Runtime](https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/python).
+## Features
 
-## Demo
+- **Search for Songs, Artists, and Albums** on YouTube Music.
+- **Retrieve Artist Information** based on artist ID.
+- **Fetch Audio URL** for YouTube videos using yt-dlp.
+- **Get Related Songs** for a given song ID.
+- **Health Check** to verify if the API is up and running.
+- **Retrieve Detailed Album Information** and browse IDs.
+- **Custom Cookie Management** for YouTube video downloads.
 
-https://flask-python-template.vercel.app/
+## Endpoints
 
-## How it Works
+### 1. `/get_audio` (POST)
 
-This example uses the Web Server Gateway Interface (WSGI) with Flask to enable handling requests on Vercel with Serverless Functions.
+Fetches the best audio URL for a list of YouTube video URLs.
 
-## Running Locally
+#### Request
 
-```bash
-npm i -g vercel
-vercel dev
-```
+- **Method**: `POST`
+- **Content-Type**: `application/json` or `multipart/form-data`
+- **Body**:
+  - `urls[]`: List of YouTube video URLs to extract audio from (required).
+  - `cookies_url` (optional): URL to a `cookies.txt` file for authentication.
+  - Alternatively, you can upload a `cookies.txt` file directly.
 
-Your Flask application is now available at `http://localhost:3000`.
+#### Example Request:
 
-## One-Click Deploy
-
-Deploy the example using [Vercel](https://vercel.com?utm_source=github&utm_medium=readme&utm_campaign=vercel-examples):
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fexamples%2Ftree%2Fmain%2Fpython%2Fflask3&demo-title=Flask%203%20%2B%20Vercel&demo-description=Use%20Flask%203%20on%20Vercel%20with%20Serverless%20Functions%20using%20the%20Python%20Runtime.&demo-url=https%3A%2F%2Fflask3-python-template.vercel.app%2F&demo-image=https://assets.vercel.com/image/upload/v1669994156/random/flask.png)
+```json
+{
+  "urls": [
+    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "https://youtu.be/dQw4w9WgXcQ"
+  ],
+  "cookies_url": "https://example.com/cookies.txt"
+}
