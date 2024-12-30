@@ -135,18 +135,19 @@ GET /search?query=Beatles
 
 Feel free to contribute to this project! Here’s how you can help:
 
-1. Fork the repository: git fork https://github.com/reddevil212/flask-hello-world
-2. Create a new branch: git checkout -b feature/feature-name
-3. Make your changes and commit them: git commit -m "Add feature"
-4. Push your changes: git push origin feature/feature-name
+1. Fork the repository: ```git fork https://github.com/reddevil212/flask-hello-world```
+2. Create a new branch: ```git checkout -b feature/feature-name```
+3. Make your changes and commit them: ```git commit -m "Add feature"```
+4. Push your changes: ```git push origin feature/feature-name```
 5. Create a Pull Request (PR) and describe what you've done.
 
 
 <h3>Documentations that might help</h3>
 
+[💾 ytmusicapi](https://github.com/sigma67/ytmusicapi)
 [📝 How to create a Pull Request](https://www.atlassian.com/br/git/tutorials/making-a-pull-request)
 
 [💾 Commit pattern](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716)
 
-[💾 YTMUSICAPI](https://github.com/sigma67/ytmusicapi)
+
 
