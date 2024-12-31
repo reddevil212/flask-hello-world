@@ -12,11 +12,12 @@ app = Flask(__name__)
 
 client_id = '861556708454-d6dlm3lh05idd8npek18k6be8ba3oc68.apps.googleusercontent.com'
 client_secret = 'SboVhoG9s0rNafixCSGGKXAT'
+OAUTH_JSON_URL = "https://raw.githubusercontent.com/reddevil212/ytmusicapi-flask/refs/heads/main/oauth.json"
 
 ytmusic = YTMusic(oauth_credentials=OAuthCredentials(
     client_id=client_id,
     client_secret=client_secret
-))
+), oauth_path=OAUTH_JSON_PATH)
 # Configure a temporary directory for storing uploaded files
 TEMP_DIR = tempfile.mkdtemp()
 
@@ -26,6 +27,25 @@ DEFAULT_COOKIES_URL = "https://raw.githubusercontent.com/reddevil212/ytmusicapi-
 # Helper function to validate YouTube URL
 def is_valid_youtube_url(url):
     return 'youtube.com' in url or 'youtu.be' in url
+
+# Function to download the oauth.json file from URL
+def download_oauth_json(url, download_path):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an error for bad responses
+        with open(download_path, 'wb') as f:
+            f.write(response.content)
+        return download_path
+    except requests.exceptions.RequestException as e:
+        return {"error": f"Failed to download oauth.json: {str(e)}"}
+
+# Ensure the oauth.json file exists before initializing YTMusic
+if not os.path.exists(OAUTH_JSON_PATH):
+    result = download_oauth_json(OAUTH_JSON_URL, OAUTH_JSON_PATH)
+    if isinstance(result, dict) and 'error' in result:
+        print(result['error'])
+        exit()
+
 
 # Helper function to download cookies file from URL
 def download_cookies_from_url(url, download_path):
