@@ -14,21 +14,11 @@ client_id = '861556708454-d6dlm3lh05idd8npek18k6be8ba3oc68.apps.googleuserconten
 client_secret = 'SboVhoG9s0rNafixCSGGKXAT'
 OAUTH_JSON_URL = "https://raw.githubusercontent.com/reddevil212/ytmusicapi-flask/refs/heads/main/oauth.json"
 
-ytmusic = YTMusic(oauth_credentials=OAuthCredentials(
-    client_id=client_id,
-    client_secret=client_secret
-), oauth_path=OAUTH_JSON_PATH)
+
 # Configure a temporary directory for storing uploaded files
 TEMP_DIR = tempfile.mkdtemp()
 
-# Default cookies file URL if no cookies file or cookies URL is provided
-DEFAULT_COOKIES_URL = "https://raw.githubusercontent.com/reddevil212/ytmusicapi-flask/refs/heads/main/cookies.txt"
-
-# Helper function to validate YouTube URL
-def is_valid_youtube_url(url):
-    return 'youtube.com' in url or 'youtu.be' in url
-
-# Function to download the oauth.json file from URL
+# Function to download oauth.json from a URL and save it to a temporary file
 def download_oauth_json(url, download_path):
     try:
         response = requests.get(url)
@@ -37,14 +27,23 @@ def download_oauth_json(url, download_path):
             f.write(response.content)
         return download_path
     except requests.exceptions.RequestException as e:
-        return {"error": f"Failed to download oauth.json: {str(e)}"}
+        print(f"Error downloading oauth.json: {str(e)}")
+        return None
 
-# Ensure the oauth.json file exists before initializing YTMusic
-if not os.path.exists(OAUTH_JSON_PATH):
-    result = download_oauth_json(OAUTH_JSON_URL, OAUTH_JSON_PATH)
-    if isinstance(result, dict) and 'error' in result:
-        print(result['error'])
-        exit()
+# Download the oauth.json to a temporary file
+OAUTH_JSON_PATH = os.path.join(TEMP_DIR, 'oauth.json')
+download_oauth_json(OAUTH_JSON_URL, OAUTH_JSON_PATH)
+
+ytmusic = YTMusic(oauth_credentials=OAuthCredentials(
+    client_id=client_id,
+    client_secret=client_secret
+), oauth_path=OAUTH_JSON_PATH)
+# Default cookies file URL if no cookies file or cookies URL is provided
+DEFAULT_COOKIES_URL = "https://raw.githubusercontent.com/reddevil212/ytmusicapi-flask/refs/heads/main/cookies.txt"
+
+# Helper function to validate YouTube URL
+def is_valid_youtube_url(url):
+    return 'youtube.com' in url or 'youtu.be' in url
 
 
 # Helper function to download cookies file from URL
