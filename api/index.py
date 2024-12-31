@@ -34,10 +34,15 @@ def download_oauth_json(url, download_path):
 OAUTH_JSON_PATH = os.path.join(TEMP_DIR, 'oauth.json')
 download_oauth_json(OAUTH_JSON_URL, OAUTH_JSON_PATH)
 
-ytmusic = YTMusic(oauth_credentials=OAuthCredentials(
+# Initialize OAuthCredentials with the downloaded oauth.json
+oauth_credentials = OAuthCredentials(
     client_id=client_id,
-    client_secret=client_secret
-), oauth_path=OAUTH_JSON_PATH)
+    client_secret=client_secret,
+    oauth_file=OAUTH_JSON_PATH
+)
+
+# Initialize YTMusic with the OAuth credentials and oauth.json file
+ytmusic = YTMusic(OAUTH_JSON_PATH, oauth_credentials=oauth_credentials)
 # Default cookies file URL if no cookies file or cookies URL is provided
 DEFAULT_COOKIES_URL = "https://raw.githubusercontent.com/reddevil212/ytmusicapi-flask/refs/heads/main/cookies.txt"
 
