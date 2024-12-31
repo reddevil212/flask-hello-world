@@ -13,7 +13,7 @@ ytmusic = YTMusic()
 TEMP_DIR = tempfile.mkdtemp()
 
 # Default cookies file URL if no cookies file or cookies URL is provided
-DEFAULT_COOKIES_URL = "https://raw.githubusercontent.com/reddevil212/jks/refs/heads/main/cookies.txt"
+DEFAULT_COOKIES_URL = "https://raw.githubusercontent.com/reddevil212/ytmusicapi-flask/refs/heads/main/cookies.txt"
 
 # Helper function to validate YouTube URL
 def is_valid_youtube_url(url):
