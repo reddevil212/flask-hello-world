@@ -8,7 +8,14 @@ from ytmusicapi import YTMusic
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-ytmusic = YTMusic()
+
+client_id = '861556708454-d6dlm3lh05idd8npek18k6be8ba3oc68.apps.googleusercontent.com'
+client_secret = 'SboVhoG9s0rNafixCSGGKXAT'
+
+ytmusic = YTMusic(oauth_credentials=OAuthCredentials(
+    client_id=client_id,
+    client_secret=client_secret
+))
 # Configure a temporary directory for storing uploaded files
 TEMP_DIR = tempfile.mkdtemp()
 
