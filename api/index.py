@@ -5,7 +5,7 @@ import requests
 import time
 from flask import Flask, jsonify, request
 from ytmusicapi import YTMusic
-from ytmusicapi.credentials import OAuthCredentials
+from ytmusicapi.auth.oauth import OAuthCredentials
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
