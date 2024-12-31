@@ -208,10 +208,19 @@ def get_album_browse_id(album_id):
 @app.route('/songs/<string:song_id>', methods=['GET'])
 def get_song(song_id):
     start_time = time.time()  # Start measuring time
-    results = ytmusic.get_song(song_id)
-    end_time = time.time()  # End measuring time
-    print(f"Get Song Request Time: {end_time - start_time:.4f} seconds")  # Print time taken
-    return jsonify(results)
+
+    try:
+        # Call get_song with both videoId and signatureTimestamp
+        signature_timestamp = 20073  # Use your provided timestamp here
+        results = ytmusic.get_song(song_id, signatureTimestamp=signature_timestamp)
+
+        end_time = time.time()  # End measuring time
+        print(f"Get Song Request Time: {end_time - start_time:.4f} seconds")  # Print time taken
+        return jsonify(results)
+
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        return jsonify({'error': 'Bad Request', 'message': str(e)}), 400
 
 # Endpoint to retrieve related songs
 @app.route('/songs/<string:song_id>/related', methods=['GET'])
