@@ -24,6 +24,18 @@ def download_oauth_json(url, download_path):
         response.raise_for_status()  # Raise an error for bad responses
         with open(download_path, 'wb') as f:
             f.write(response.content)
+        
+        # Log the path where oauth.json was saved
+        print(f"oauth.json downloaded to: {download_path}")
+
+        # Optionally, log the content of oauth.json (excluding sensitive info like client secrets)
+        try:
+            with open(download_path, 'r') as f:
+                content = f.read()
+                print(f"oauth.json content (excluding sensitive info): {content[:500]}")  # Log first 500 chars
+        except Exception as e:
+            print(f"Error reading oauth.json content: {str(e)}")
+        
         return download_path
     except requests.exceptions.RequestException as e:
         print(f"Error downloading oauth.json: {str(e)}")
